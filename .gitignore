@@ -1,0 +1,24 @@
+# edit files
+*.pyc
+*.py~
+*~
+*.kate-swp
+
+# logs
+/logs
+
+# tmp
+/tmp
+
+
+# git
+/.idea
+/.git
+
+# virlualenv
+/.env
+/venv
+
+# work config file
+config.py
+# test_*.py
