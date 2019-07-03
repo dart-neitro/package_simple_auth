@@ -37,6 +37,8 @@ class SimpleAuthServer(BaseMixin):
     # sec
     expired_access_token_delta = 30
     expired_update_token_delta = 60
+    expired_identifier_delta = 45
+    time_delta = 1
 
     user_model = SimpleAuthUser
 
@@ -45,11 +47,15 @@ class SimpleAuthServer(BaseMixin):
 
     def get_identifier(self):
         identifier = str(uuid.uuid4())
+        timestamp = int(time.time())
 
         response = dict(
             identifier=identifier
         )
-        self.session_storage[identifier] = dict(timestamp=time.time())
+        self.session_storage[identifier] = dict(
+            timestamp=timestamp,
+            timestamp_expired=(timestamp + self.expired_identifier_delta)
+        )
 
         return self.format(result=response)
 
@@ -83,28 +89,37 @@ class SimpleAuthServer(BaseMixin):
         :return:
         """
 
-        if identifier in self.session_storage:
-            if 'user' in self.session_storage[identifier]:
-                token = self.render_token()
-                record = copy.deepcopy(self.session_storage[identifier])
-
-                del self.session_storage[identifier]
-                record['token'] = token
-
-                access_token = token['access_token']
-                update_token = token['update_token']
-
-                self.session_storage[access_token] = record
-                self.session_storage[update_token] = record
-
-                return self.format(result=record)
-            else:
-                return self.format(
-                    error=True, msg="Have no information about user")
-        else:
+        if identifier not in self.session_storage:
             return self.format(error=True, msg="The identifier is wrong")
 
-        return self.format(error=True, msg="Unknown error")
+        current_time = int(time.time())
+        timestamp_default = current_time - 1
+        timestamp_expired = self.session_storage[identifier].get(
+            'timestamp_expired', timestamp_default)
+        if timestamp_expired - current_time < self.time_delta:
+            return self.format(
+                error=True, msg="This identifier has expired")
+
+        if 'user' not in self.session_storage[identifier]:
+            return self.format(
+                error=True, msg="Have no information about user")
+
+        token = self.render_token()
+        record = copy.deepcopy(self.session_storage[identifier])
+
+        del self.session_storage[identifier]
+        record['token'] = token
+
+        access_token = token['access_token']
+        update_token = token['update_token']
+
+        record['timestamp_expired'] = token['expired_access_token']
+        self.session_storage[access_token] = copy.deepcopy(record)
+
+        record['timestamp_expired'] = token['expired_update_token']
+        self.session_storage[update_token] = copy.deepcopy(record)
+
+        return self.format(result=self.session_storage[access_token])
 
     def check_user(self, user_id: dict):
         # TODO add method
