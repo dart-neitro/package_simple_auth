@@ -37,6 +37,8 @@ class SimpleAuthServer(SimpleAuthServer):
 
     expired_access_token_delta = 30
     expired_update_token_delta = 60
+    expired_identifier_delta = 45
+    time_delta = 1
 
     user_model = FakeSimpleAuthUser
 
@@ -63,7 +65,7 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(
             server.session_storage,
-            {'mock_uud4': {'timestamp': 100}})
+            {'mock_uud4': {'timestamp': 100, 'timestamp_expired': 145}})
 
     @mock.patch('simple_auth.core.server.time')
     @mock.patch('simple_auth.core.server.uuid')
@@ -135,13 +137,16 @@ class MyTestCase(unittest.TestCase):
         server = SimpleAuthServer()
 
         user_data = {
-            'timestamp': 1,
+            'timestamp': 100,
+            'timestamp_expired': 150,
             'user': {
                 'name': 'User name', 'level': 5, 'access': [1, 2, 3]}}
 
         server.session_storage['fake_identifier'] = user_data
         server.session_storage['fake_identifier_without_user'] = {
-            'timestamp': 1}
+            'timestamp': 100,
+            'timestamp_expired': 150,
+        }
 
         response = server.get_token(
             identifier='wrong_identifier')
@@ -171,7 +176,8 @@ class MyTestCase(unittest.TestCase):
             {'error': False,
              'msg': '',
              'result': {
-                 'timestamp': 1,
+                 'timestamp': 100,
+                 'timestamp_expired': 130,
                  'token': {'access_token': 'mock_uud4_0',
                            'expired_access_token': 130,
                            'expired_update_token': 160,
@@ -180,12 +186,6 @@ class MyTestCase(unittest.TestCase):
                  }}
         )
 
-    def template(self):
-        """
-        Test SimpleAuthServer.
-
-        :return:
-        """
 
 
 if __name__ == '__main__':
