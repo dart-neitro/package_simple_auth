@@ -10,6 +10,7 @@ state=
 import requests
 import json
 import urllib
+import time
 
 from .base import BaseMixin
 
@@ -32,6 +33,7 @@ class SimpleAuthClient(BaseMixin):
 
         :return:
         """
+
         try:
             response = requests.post(url=self.url_server_auth_api, json=kwargs)
             data = json.loads(response.text)
@@ -69,12 +71,49 @@ class SimpleAuthClient(BaseMixin):
 
         return response
 
-    def update_token(self, token):
+    def update_token(self, token: dict):
         response = self.request(
             command='update_token',
             token=token
         )
         return response
+
+    @staticmethod
+    def is_valid_token(token: dict):
+        """
+        check token for relevance
+
+        :param token: token
+
+        :return:
+        """
+
+        token = token or dict()
+        current_time = int(time.time())
+
+        expired_token_time = token.get('expired_access_token', current_time)
+
+        if expired_token_time <= current_time:
+            return False
+
+        return True
+
+    def is_valid_identifier(self, identifier: str):
+        """
+        Check identifier
+
+        :param identifier:
+
+        :return:
+        """
+
+        response = self.request(
+            command='check_identifier',
+            identifier=identifier
+        )
+
+        return not response.get('error', True)
+
 
 
 
