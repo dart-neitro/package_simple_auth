@@ -125,6 +125,28 @@ class SimpleAuthServer(BaseMixin):
         # TODO add method
         return self.format()
 
+    def check_identifier(self, identifier: str):
+        """
+        Check identifier
+
+        :param identifier: string
+
+        :return:
+        """
+
+        if identifier not in self.session_storage:
+            return self.format(error=True, msg="The identifier is wrong")
+
+        current_time = int(time.time())
+        timestamp_default = current_time - 1
+        timestamp_expired = self.session_storage[identifier].get(
+            'timestamp_expired', timestamp_default)
+        if timestamp_expired - current_time < self.time_delta:
+            return self.format(
+                error=True, msg="This identifier has expired")
+
+        return self.format(result=dict(identifier=identifier))
+
     def check_token(self, token: dict):
         # TODO add method
         key = token.get('access_token')
