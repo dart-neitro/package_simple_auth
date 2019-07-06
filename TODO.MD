@@ -6,3 +6,4 @@
 * How can we check user data using token?
 * Add type key - ?
 * Add decorator for flask?
+* Add timeout for request to server auth
