@@ -54,10 +54,16 @@ class MyTestCase(unittest.TestCase):
         :return:
         """
 
+        # mocks
         mock_uuid.uuid4 = lambda: 'mock_uud4'
         mock_time.time = lambda: 100
+
+        # init
         server = SimpleAuthServer()
+
         response = server.get_identifier()
+
+        # checks
         self.assertEqual(
             response,
             {'result': {'identifier': 'mock_uud4'}, 'error': False, 'msg': ''},
@@ -184,6 +190,46 @@ class MyTestCase(unittest.TestCase):
                            'update_token': 'mock_uud4_1'},
                  'user': user_data['user']
                  }}
+        )
+
+    @mock.patch('simple_auth.core.server.time')
+    def test_check_identifier(self, mock_time):
+        """
+        Test SimpleAuthServer.check_identifier
+
+        :return:
+        """
+
+        mock_time.time = lambda: 100
+
+        server = SimpleAuthServer()
+
+        user_data = {
+            'timestamp': 100,
+            'timestamp_expired': 150,
+            'user': {
+                'name': 'User name', 'level': 5, 'access': [1, 2, 3]}}
+
+        server.session_storage['fake_identifier'] = user_data
+        server.session_storage['fake_identifier_without_user'] = {
+            'timestamp': 100,
+            'timestamp_expired': 150,
+        }
+
+        response = server.check_identifier(
+            identifier='wrong_identifier')
+
+        self.assertEqual(
+            response,
+            {'error': True, 'msg': 'The identifier is wrong', 'result': None}
+        )
+
+        response = server.check_identifier(
+            identifier='fake_identifier')
+        self.assertEqual(
+            response,
+            {'error': False, 'msg': '', 'result':
+                {'identifier': 'fake_identifier'}}
         )
 
 
