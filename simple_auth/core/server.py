@@ -89,16 +89,9 @@ class SimpleAuthServer(BaseMixin):
         :return:
         """
 
-        if identifier not in self.session_storage:
-            return self.format(error=True, msg="The identifier is wrong")
-
-        current_time = int(time.time())
-        timestamp_default = current_time - 1
-        timestamp_expired = self.session_storage[identifier].get(
-            'timestamp_expired', timestamp_default)
-        if timestamp_expired - current_time < self.time_delta:
-            return self.format(
-                error=True, msg="This identifier has expired")
+        response = self.check_identifier(identifier=identifier)
+        if response.get('error', True):
+            return response
 
         if 'user' not in self.session_storage[identifier]:
             return self.format(
