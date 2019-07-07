@@ -10,12 +10,29 @@ from unittest import mock
 
 
 from simple_auth.core import flask_client
+from simple_auth.core.client import SimpleAuthClient
+
+
+EXAMPLE_USER = {'user_id': '123', 'level': [1, 2, 3]}
+EXAMPLE_TOKEN = {
+            'access_token': 'mock_uud4_0',
+            'expired_access_token': 130,
+            'expired_update_token': 160,
+            'update_token': 'mock_uud4_1'
+        }
+
+class MyDefaultNone:
+    @staticmethod
+    def is_default_none():
+        return True
 
 
 class FakeG:
     """
     mock for flask.g
     """
+
+    default_none = MyDefaultNone()
 
     def __init__(self, **kwargs):
         self.__store = copy.deepcopy(kwargs)
@@ -30,6 +47,17 @@ class FakeG:
     def __delattr__(self, key):
         if key in self.__store:
             del self.__store[key]
+        return super().__delattr__(key)
+
+    def pop(self, key, default=default_none):
+        if default is self.default_none:
+            value = self.__store.pop(key)
+
+            return value
+        return self.__store.pop(key, default)
+
+    def get(self, key, default=None):
+        return self.__store.get(key, default)
 
     def get_store(self):
         return copy.deepcopy(self.__store)
