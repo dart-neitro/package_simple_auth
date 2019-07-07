@@ -7,7 +7,7 @@ from .client import SimpleAuthClient
 
 
 def check_auth_identifier():
-    url_server_auth = 'http://localhost'
+    url_server_auth = flask.current_app.config.get('URL_AUTH_SERVER')
 
     client = SimpleAuthClient(
         url_server_auth=url_server_auth)
