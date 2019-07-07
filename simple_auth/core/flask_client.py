@@ -15,10 +15,8 @@ def check_auth_identifier():
     if not hasattr(flask.g, 'auth_identifier'):
         raise KeyError('Object flask.g have not got <auth_identifier>')
 
-    if hasattr(flask.g, 'user'):
-        del flask.g.user
-    if hasattr(flask.g, 'auth_token'):
-        del flask.g.auth_token
+    flask.g.pop('user', None)
+    flask.g.pop('auth_token', None)
 
     if client.is_valid_identifier(identifier=flask.g.auth_identifier):
 
