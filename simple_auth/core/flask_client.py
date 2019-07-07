@@ -52,8 +52,17 @@ def check_auth_token():
         url_server_auth=url_server_auth)
 
     if client.is_valid_token(token=flask.g.auth_token):
-        if flask.g.get('uer'):
+        if flask.g.get('user'):
             return
+    elif client.is_valid_token_for_update(token=flask.g.auth_token):
+        response = client.update_token(token=flask.g.auth_token)
+        if not response.get('error', True):
+            new_token = response.get('result', {}).get('token')
+            new_user = response.get('result', {}).get('user')
+            if new_token and new_user:
+                flask.g.user = new_user
+                flask.g.auth_token = new_token
+                return
 
     flask.g.pop('user', None)
     flask.g.pop('auth_token', None)
