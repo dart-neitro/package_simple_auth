@@ -114,6 +114,12 @@ class MyTestCase(unittest.TestCase):
 
     @mock.patch('simple_auth.core.client.time')
     def test_is_valid_token(self, mock_time):
+        """
+        SimpleAuthClient.is_valid_token
+
+        :return:
+        """
+
         client = SimpleAuthClient(url_server_auth='http://localhost')
 
         token = {
@@ -149,6 +155,69 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(
             client.is_valid_token(token={}),
             False
+        )
+
+    @mock.patch('simple_auth.core.client.time')
+    def test_is_valid_token_for_update(self, mock_time):
+        """
+        SimpleAuthClient.is_valid_token_for_update
+
+        :return:
+        """
+
+        client = SimpleAuthClient(url_server_auth='http://localhost')
+
+        token = {
+            'access_token': 'mock_uud4_0',
+            'expired_access_token': 130,
+            'expired_update_token': 160,
+            'update_token': 'mock_uud4_1'
+        }
+
+        mock_time.time = lambda: 100
+        self.assertEqual(
+            True,
+            client.is_valid_token_for_update(token=token)
+        )
+
+        mock_time.time = lambda: 130
+        self.assertEqual(
+            True,
+            client.is_valid_token_for_update(token=token)
+        )
+
+        mock_time.time = lambda: 131
+        self.assertEqual(
+            True,
+            client.is_valid_token_for_update(token=token)
+        )
+
+        mock_time.time = lambda: 159
+        self.assertEqual(
+            True,
+            client.is_valid_token_for_update(token=token)
+        )
+
+        mock_time.time = lambda: 160
+        self.assertEqual(
+            False,
+            client.is_valid_token_for_update(token=token)
+        )
+
+        mock_time.time = lambda: 161
+        self.assertEqual(
+            False,
+            client.is_valid_token_for_update(token=token)
+        )
+
+        self.assertEqual(
+            False,
+            client.is_valid_token_for_update(token=None)
+        )
+
+        self.assertEqual(
+            False,
+            client.is_valid_token_for_update(token={})
         )
 
     @mock.patch('simple_auth.core.client.requests')
