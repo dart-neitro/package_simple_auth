@@ -78,26 +78,6 @@ class SimpleAuthClient(BaseMixin):
         )
         return response
 
-    @staticmethod
-    def is_valid_token(token: dict):
-        """
-        check token for relevance
-
-        :param token: token
-
-        :return:
-        """
-
-        token = token or dict()
-        current_time = int(time.time())
-
-        expired_token_time = token.get('expired_access_token', current_time)
-
-        if expired_token_time <= current_time:
-            return False
-
-        return True
-
     def is_valid_identifier(self, identifier: str):
         """
         Check identifier
@@ -113,6 +93,49 @@ class SimpleAuthClient(BaseMixin):
         )
 
         return not response.get('error', True)
+
+    @staticmethod
+    def is_valid_token(token: dict):
+        """
+        check token for relevance
+
+        :param token: token
+
+        :return:
+        """
+
+        if not isinstance(token, dict):
+            token = dict()
+
+        current_time = int(time.time())
+
+        expired_token_time = token.get('expired_access_token', current_time)
+
+        if expired_token_time <= current_time:
+            return False
+
+        return True
+
+    @staticmethod
+    def is_valid_token_for_update(token: dict):
+        """
+        check token for ability to update
+
+        :param token: token
+
+        :return:
+        """
+        if not isinstance(token, dict):
+            token = dict()
+
+        current_time = int(time.time())
+
+        expired_token_time = token.get('expired_update_token', current_time)
+
+        if expired_token_time <= current_time:
+            return False
+
+        return True
 
 
 
