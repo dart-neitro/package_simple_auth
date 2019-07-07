@@ -201,6 +201,70 @@ class MyTestCase(unittest.TestCase):
             {}
         )
 
+    @mock.patch("simple_auth.core.client.time")
+    @mock.patch("simple_auth.core.flask_client.SimpleAuthClient")
+    @mock.patch("simple_auth.core.flask_client.flask")
+    def test_check_auth_token_1(self, mock_flask, mock_SimpleAuthClient,
+                                mock_time):
+        """
+        Test function: flask_client.check_auth_identifier
+        actual identifier + user + token
+
+
+        :return:
+        """
+
+        mock_SimpleAuthClient.return_value = mock.MagicMock(
+            is_valid_token=SimpleAuthClient.is_valid_token)
+
+        mock_flask.g = FakeG()
+
+        with self.assertRaises(KeyError):
+            flask_client.check_auth_token()
+
+        mock_flask.g.user = {'user_id': '123', 'level': [1, 2, 3]}
+
+        with self.assertRaises(KeyError):
+            flask_client.check_auth_token()
+
+        mock_flask.g.user = {'user_id': '123', 'level': [1, 2, 3]}
+        mock_flask.g.auth_token = {'token': '123'}
+
+        flask_client.check_auth_token()
+
+        self.assertEqual(
+            {},
+            mock_flask.g.get_store()
+
+        )
+
+        # work with time - actual
+        mock_time.time = lambda: 100
+        mock_flask.g.auth_identifier = 'fake_identifier'
+        mock_flask.g.user = EXAMPLE_USER
+        mock_flask.g.auth_token = EXAMPLE_TOKEN
+
+        flask_client.check_auth_token()
+
+        self.assertEqual(
+            {'auth_token': EXAMPLE_TOKEN, 'user': EXAMPLE_USER},
+            mock_flask.g.get_store()
+
+        )
+
+        # work with time - expired access token
+        mock_time.time = lambda: 130
+        mock_flask.g.user = EXAMPLE_USER
+        mock_flask.g.auth_token = EXAMPLE_TOKEN
+
+        flask_client.check_auth_token()
+
+        self.assertEqual(
+            {},
+            mock_flask.g.get_store()
+
+        )
+
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(MyTestCase)
