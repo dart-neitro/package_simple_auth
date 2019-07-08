@@ -172,6 +172,24 @@ def available_for_anonymous_user(f):
     return wrapper
 
 
-def init_app(app):
-    # TODO It
-    pass
+def control_auth(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        is_only_for_auth_users = getattr(f, 'is_only_for_auth_users', False)
+
+        load_before_view()
+
+        if is_only_for_auth_users:
+            url_redirect = flask.g.get('auth_redirect')
+
+            if url_redirect:
+                load_after_view()
+                return flask.redirect(url_redirect)
+
+        result = f(*args, **kwargs)
+        load_after_view()
+
+        return result
+    return wrapper
+
+
