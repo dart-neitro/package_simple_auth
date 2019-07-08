@@ -193,3 +193,20 @@ def control_auth(f):
     return wrapper
 
 
+def init_app(app):
+    for view in app.view_functions.keys():
+        app.view_functions[view] = control_auth(app.view_functions[view])
+    return app
+
+
+def only_auth_user(f):
+    """
+    This decorator provides ability to get view for only auth user
+
+    :param f:
+    :return:
+    """
+
+    setattr(f, 'is_only_for_auth_users', True)
+
+    return f
