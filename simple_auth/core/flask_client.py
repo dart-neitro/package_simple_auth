@@ -157,13 +157,9 @@ def load_after_view():
     return
 
 
-def get_data_from_cookies():
-    pass
-
-
-def only_auth_user(f):
+def available_for_anonymous_user(f):
     """
-    This decorator provides ability to get view for only auth user
+    This decorator provides ability to get view for any user
 
     :param f:
     :return:
@@ -171,11 +167,8 @@ def only_auth_user(f):
 
     @wraps(f)
     def wrapper(*args, **kwargs):
-        if flask.g.user:
-            return f(*args, **kwargs)
 
-        return flask.url_for('http://localhost:9999')
-
+        return f(*args, **kwargs)
     return wrapper
 
 
