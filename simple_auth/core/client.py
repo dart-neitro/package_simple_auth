@@ -3,7 +3,7 @@ Client side
 
 resource=
 client_id=
-redirect_uri=
+redirect_url=
 response_type=
 state=
 """
@@ -56,7 +56,7 @@ class SimpleAuthClient(BaseMixin):
         query = urllib.parse.urlencode(
             dict(
                 identifier=identifier,
-                redirect_uri=current_url
+                redirect_url=current_url
             )
         )
 

@@ -84,7 +84,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(
             url,
             'http://localhost?identifier=mock_identifier'
-            '&redirect_uri=http%3A%2F%2Ffake.url')
+            '&redirect_url=http%3A%2F%2Ffake.url')
 
     @mock.patch('simple_auth.core.client.requests')
     def test_get_token(self, mock_requests):
