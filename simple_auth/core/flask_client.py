@@ -53,8 +53,6 @@ def check_auth_token():
         raise KeyError('Object flask.g have not got <user>')
 
     flask.g.pop('auth_identifier', None)
-    if hasattr(flask.g, 'auth_identifier'):
-        del flask.g.auth_identifier
 
     client = SimpleAuthClient(
         url_server_auth=url_server_auth)
@@ -77,21 +75,38 @@ def check_auth_token():
     return
 
 
-def check_get_identifier():
-    # clear data
+def get_auth_identifier():
+    """
+    Get auth identifier
+
+    :return:
+    """
+
     url_server_auth = flask.current_app.config.get('URL_AUTH_SERVER')
+    url_if_auth_server_unvailable = flask.current_app.config.get(
+        'URL_IF_AUTH_SERVER_UNAVAILABLE')
+
+    # unavailable
     client = SimpleAuthClient(
         url_server_auth=url_server_auth)
 
-    flask.g.user = None
-    flask.g.auth_token = None
+    flask.g.pop('user', None)
+    flask.g.pop('auth_token', None)
+    flask.g.pop('auth_identifier', None)
 
     # we have got no identifier
     response = client.get_identifier()
 
     if not response.get('error', True):
         flask.g.auth_identifier = response.get('result', {}).get('identifier')
+        flask.g.auth_redirect = client.get_auth_url(
+            identifier=flask.g.auth_identifier,
+            current_url=flask.request.url
+        )
+        return
 
+    flask.g.auth_redirect = url_if_auth_server_unvailable
+    return
 
 # @bp.before_app_request
 def load_logged_in_user():
