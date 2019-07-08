@@ -19,12 +19,20 @@ def check_auth_identifier():
     flask.g.pop('auth_token', None)
 
     if client.is_valid_identifier(identifier=flask.g.auth_identifier):
+        response = client.get_token(identifier=flask.g.auth_identifier)
+        if response.get('error', True):
+            flask.g.auth_redirect = client.get_auth_url(
+                identifier=flask.g.auth_identifier,
+                current_url=flask.request.url)
+            return
 
-        flask.g.auth_redirect = client.get_auth_url(
-            identifier=flask.g.auth_identifier,
-            current_url=flask.request.url)
+        new_token = response.get('result', {}).get('token')
+        new_user = response.get('result', {}).get('user')
+        if new_token and new_user:
+            flask.g.user = new_user
+            flask.g.auth_token = new_token
+            return
 
-        return
     else:
         del flask.g.auth_identifier
     return
