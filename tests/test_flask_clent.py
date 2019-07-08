@@ -323,6 +323,104 @@ class MyTestCase(unittest.TestCase):
 
         )
 
+    @mock.patch("simple_auth.core.flask_client.SimpleAuthClient")
+    @mock.patch("simple_auth.core.flask_client.flask")
+    def test_get_auth_identifier_1(self, mock_flask, mock_SimpleAuthClient):
+        """
+        Test function: flask_client.get_auth_identifier
+
+        :return:
+        """
+
+        fake_response = {
+            'error': False,
+            'msg': '',
+            'result': {'identifier': 'mock_uud4'}
+        }
+
+        mock_get_identifier = mock.MagicMock(
+            return_value=fake_response)
+
+        mock_get_auth_url = mock.MagicMock(
+            return_value='mock_get_auth_url')
+        mock_SimpleAuthClient.return_value = mock.MagicMock(
+            get_auth_url=mock_get_auth_url,
+            get_identifier=mock_get_identifier
+        )
+
+        mock_flask.g = FakeG()
+        mock_flask.current_app.config = dict(
+            URL_AUTH_SERVER='http://url1.fake'.lower(),
+            URL_IF_AUTH_SERVER_UNAVAILABLE='http://url2.fake'.lower(),
+        )
+
+        mock_flask.g.user = {'user_id': '123', 'level': [1, 2, 3]}
+        mock_flask.g.auth_token = {'token': '123'}
+
+        flask_client.get_auth_identifier()
+
+        self.assertEqual(
+            {
+                'auth_identifier': 'mock_uud4',
+                'auth_redirect': 'mock_get_auth_url'},
+            mock_flask.g.get_store()
+
+        )
+
+    @mock.patch("simple_auth.core.flask_client.SimpleAuthClient")
+    @mock.patch("simple_auth.core.flask_client.flask")
+    def test_get_auth_identifier_2(self, mock_flask, mock_SimpleAuthClient):
+        """
+        Test function: flask_client.get_auth_identifier
+
+        :return:
+        """
+
+        fake_response = {
+            'error': True,
+            'msg': '',
+            'result': None
+        }
+
+        mock_get_identifier = mock.MagicMock(
+            return_value=fake_response)
+
+        mock_get_auth_url = mock.MagicMock(
+            return_value='mock_get_auth_url')
+        mock_SimpleAuthClient.return_value = mock.MagicMock(
+            get_auth_url=mock_get_auth_url,
+            get_identifier=mock_get_identifier
+        )
+
+        mock_flask.current_app.config = dict(
+            URL_AUTH_SERVER='http://url1.fake'.lower(),
+            URL_IF_AUTH_SERVER_UNAVAILABLE='http://url2.fake'.lower(),
+        )
+
+        mock_flask.g = FakeG()
+        mock_flask.g.user = {'user_id': '123', 'level': [1, 2, 3]}
+        mock_flask.g.auth_token = {'token': '123'}
+
+        flask_client.get_auth_identifier()
+
+        self.assertEqual(
+            {'auth_redirect': 'http://url2.fake'},
+            mock_flask.g.get_store()
+
+        )
+
+        mock_flask.g = FakeG()
+        mock_flask.g.user = None
+        mock_flask.g.auth_token = None
+        mock_flask.g.auth_identifier = None
+
+        flask_client.get_auth_identifier()
+
+        self.assertEqual(
+            {'auth_redirect': 'http://url2.fake'},
+            mock_flask.g.get_store()
+
+        )
 
 
 if __name__ == '__main__':
