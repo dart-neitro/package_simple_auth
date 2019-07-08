@@ -94,7 +94,6 @@ def get_auth_identifier():
     flask.g.pop('auth_token', None)
     flask.g.pop('auth_identifier', None)
 
-    # we have got no identifier
     response = client.get_identifier()
 
     if not response.get('error', True):
@@ -108,29 +107,52 @@ def get_auth_identifier():
     flask.g.auth_redirect = url_if_auth_server_unvailable
     return
 
-# @bp.before_app_request
-def load_logged_in_user():
-    url_server_auth = 'http://localhost'
 
-    client = SimpleAuthClient(
-        url_server_auth=url_server_auth)
-
+def load_before_view():
     flask.g.user = flask.session.get("user") or None
     flask.g.auth_identifier = flask.session.get("auth_identifier") or None
     flask.g.auth_token = flask.session.get("auth_token") or None
 
     # we have got identifier
-    if flask.g.auth_identifier:
+    if flask.g.get('auth_identifier'):
         check_auth_identifier()
         if flask.g.get('auth_redirect'):
             return
 
     # we've got token
-    if flask.g.auth_token:
+    if flask.g.get('auth_token'):
         check_auth_token()
         if flask.g.get('auth_redirect'):
             return
+        elif flask.g.get('auth_token') and flask.g.get('user'):
+            return
 
+    return get_auth_identifier()
+
+
+def load_after_view():
+    flask.session.pop('auth_identifier', None)
+    flask.session.pop('user', None)
+    flask.session.pop('auth_token', None)
+    flask.session.pop('auth_redirect', None)
+
+    identifier = flask.g.pop('auth_identifier', None)
+    if identifier:
+        flask.session['auth_identifier'] = identifier
+        return
+
+    user = flask.g.pop('user', None)
+    if user:
+        flask.session['user'] = user
+
+    token = flask.g.pop('auth_token', None)
+    if user:
+        flask.session['auth_token'] = token
+
+    flask.g.pop('auth_identifier', None)
+    flask.g.pop('user', None)
+    flask.g.pop('auth_token', None)
+    flask.g.pop('auth_redirect', None)
 
     return
 
