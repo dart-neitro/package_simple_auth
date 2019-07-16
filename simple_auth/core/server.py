@@ -3,6 +3,7 @@ classes for server side
 
 Pay attention:
 token is a dictionary not string (!)
+
 """
 
 import time
@@ -54,7 +55,8 @@ class SimpleAuthServer(BaseMixin):
         )
         self.session_storage[identifier] = dict(
             timestamp=timestamp,
-            timestamp_expired=(timestamp + self.expired_identifier_delta)
+            timestamp_expired=(timestamp + self.expired_identifier_delta),
+            main_token=str(uuid.uuid4())
         )
 
         return self.format(result=response)
@@ -107,12 +109,36 @@ class SimpleAuthServer(BaseMixin):
         update_token = token['update_token']
 
         record['timestamp_expired'] = token['expired_access_token']
+        record['action'] = 'access'
         self.session_storage[access_token] = copy.deepcopy(record)
 
         record['timestamp_expired'] = token['expired_update_token']
+        record['action'] = 'update'
         self.session_storage[update_token] = copy.deepcopy(record)
 
-        return self.format(result=self.session_storage[access_token])
+        main_token = record['main_token']
+        if main_token in self.session_storage:
+            # update main token
+            data_token = self.session_storage[main_token]
+            data_token['timestamp_expired'] = token['expired_update_token']
+            self.session_storage[main_token] = data_token
+        else:
+            # create new token
+            data_token = dict(
+                timestamp=int(time.time()),
+                timestamp_expired=token['expired_update_token'],
+                action='main'
+            )
+            self.session_storage[main_token] = data_token
+
+        # remove the main token
+        data_access_token = copy.deepcopy(
+            self.session_storage[access_token])
+
+        del data_access_token['main_token']
+        del data_access_token['action']
+
+        return self.format(result=data_access_token)
 
     def check_user(self, user_id: dict):
         # TODO add method
