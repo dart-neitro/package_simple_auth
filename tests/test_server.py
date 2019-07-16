@@ -33,7 +33,7 @@ class FakeSimpleAuthUser:
 
 
 class SimpleAuthServer(SimpleAuthServer):
-    session_storage_type = dict
+    # session_storage_type = dict
 
     expired_access_token_delta = 30
     expired_update_token_delta = 60
@@ -45,6 +45,7 @@ class SimpleAuthServer(SimpleAuthServer):
 
 USER_DATA = {
             'timestamp': 100,
+            'action': 'identifier',
             'main_token': 'fake_main_token',
             'timestamp_expired': 150,
             'user': {
@@ -81,6 +82,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(
             server.session_storage,
             {'mock_uud4': {'main_token': 'mock_uud4_1',
+                           'action': 'identifier',
                            'timestamp': 100,
                            'timestamp_expired': 145}}
             )
@@ -119,7 +121,9 @@ class MyTestCase(unittest.TestCase):
 
         server = SimpleAuthServer()
         server.session_storage['fake_identifier'] = dict(
-            timestamp=1)
+            timestamp=1, main_token='fake_main_token', timestamp_expired=10,
+            action='identifier'
+        )
 
         response = server.add_user_data(
             identifier='wrong_identifier',
@@ -159,6 +163,8 @@ class MyTestCase(unittest.TestCase):
         server.session_storage['fake_identifier'] = user_data
         server.session_storage['fake_identifier_without_user'] = {
             'timestamp': 100,
+            'action': 'identifier',
+            'main_token': 'fake_main_token',
             'timestamp_expired': 150,
         }
 
@@ -186,7 +192,7 @@ class MyTestCase(unittest.TestCase):
             identifier='fake_identifier')
 
         self.assertEqual(
-            response,
+
             {'error': False,
              'msg': '',
              'result': {
@@ -197,7 +203,9 @@ class MyTestCase(unittest.TestCase):
                            'expired_update_token': 160,
                            'update_token': 'mock_uud4_1'},
                  'user': user_data['user']
-                 }}
+                 }},
+
+            response
         )
 
     @mock.patch('simple_auth.core.server.time')
@@ -217,6 +225,8 @@ class MyTestCase(unittest.TestCase):
         server.session_storage['fake_identifier'] = user_data
         server.session_storage['fake_identifier_without_user'] = {
             'timestamp': 100,
+            'main_token': 'fake_main_token',
+            'action': 'identifier',
             'timestamp_expired': 150,
         }
 
