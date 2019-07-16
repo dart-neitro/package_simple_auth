@@ -43,6 +43,14 @@ class SimpleAuthServer(SimpleAuthServer):
     user_model = FakeSimpleAuthUser
 
 
+USER_DATA = {
+            'timestamp': 100,
+            'main_token': 'fake_main_token',
+            'timestamp_expired': 150,
+            'user': {
+                'name': 'User name', 'level': 5, 'access': [1, 2, 3]}}
+
+
 class MyTestCase(unittest.TestCase):
 
     @mock.patch('simple_auth.core.server.time')
@@ -55,7 +63,8 @@ class MyTestCase(unittest.TestCase):
         """
 
         # mocks
-        mock_uuid.uuid4 = lambda: 'mock_uud4'
+        mock_uuid.uuid4 = mock.MagicMock(
+            side_effect=['mock_uud4', 'mock_uud4_1'])
         mock_time.time = lambda: 100
 
         # init
@@ -71,7 +80,10 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(
             server.session_storage,
-            {'mock_uud4': {'timestamp': 100, 'timestamp_expired': 145}})
+            {'mock_uud4': {'main_token': 'mock_uud4_1',
+                           'timestamp': 100,
+                           'timestamp_expired': 145}}
+            )
 
     @mock.patch('simple_auth.core.server.time')
     @mock.patch('simple_auth.core.server.uuid')
@@ -142,11 +154,7 @@ class MyTestCase(unittest.TestCase):
 
         server = SimpleAuthServer()
 
-        user_data = {
-            'timestamp': 100,
-            'timestamp_expired': 150,
-            'user': {
-                'name': 'User name', 'level': 5, 'access': [1, 2, 3]}}
+        user_data = USER_DATA
 
         server.session_storage['fake_identifier'] = user_data
         server.session_storage['fake_identifier_without_user'] = {
@@ -204,11 +212,7 @@ class MyTestCase(unittest.TestCase):
 
         server = SimpleAuthServer()
 
-        user_data = {
-            'timestamp': 100,
-            'timestamp_expired': 150,
-            'user': {
-                'name': 'User name', 'level': 5, 'access': [1, 2, 3]}}
+        user_data = USER_DATA
 
         server.session_storage['fake_identifier'] = user_data
         server.session_storage['fake_identifier_without_user'] = {
@@ -231,7 +235,6 @@ class MyTestCase(unittest.TestCase):
             {'error': False, 'msg': '', 'result':
                 {'identifier': 'fake_identifier'}}
         )
-
 
 
 if __name__ == '__main__':
