@@ -50,10 +50,6 @@ def index():
     return flask.redirect(redirect_url)
 
 
-
-    # return 'It,s server auth'
-
-
 @app.route('/api', methods=['GET', 'POST'])
 def auth_user():
     server = SERVER

@@ -9,12 +9,28 @@ token is a dictionary not string (!)
 import time
 import copy
 
+import schema
+
 from .base import BaseMixin
 import uuid
 
 
-class SessionStorage(dict):
-    pass
+schema_session_storage_entry = schema.Schema({
+    'timestamp': int,
+    'timestamp_expired': int,
+    'main_token': str,
+    'action': schema.And(str, lambda x: x in (
+        'access', 'update', 'main', 'identifier')),
+    schema.Optional('user'): dict,
+    schema.Optional('token'): dict,
+})
+
+
+class DictSessionStorage(dict):
+
+    def __setitem__(self, key, value):
+        value = schema_session_storage_entry.validate(data=value)
+        return super(DictSessionStorage, self).__setitem__(key, value)
 
 
 class SimpleAuthUser:
@@ -34,7 +50,7 @@ class SimpleAuthUser:
 
 
 class SimpleAuthServer(BaseMixin):
-    session_storage_type = SessionStorage
+    session_storage_type = DictSessionStorage
     # sec
     expired_access_token_delta = 30
     expired_update_token_delta = 60
@@ -56,7 +72,8 @@ class SimpleAuthServer(BaseMixin):
         self.session_storage[identifier] = dict(
             timestamp=timestamp,
             timestamp_expired=(timestamp + self.expired_identifier_delta),
-            main_token=str(uuid.uuid4())
+            main_token=str(uuid.uuid4()),
+            action='identifier'
         )
 
         return self.format(result=response)
@@ -126,6 +143,7 @@ class SimpleAuthServer(BaseMixin):
             # create new token
             data_token = dict(
                 timestamp=int(time.time()),
+                main_token=main_token,
                 timestamp_expired=token['expired_update_token'],
                 action='main'
             )
