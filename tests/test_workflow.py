@@ -230,6 +230,124 @@ class MyTestCase(unittest.TestCase):
                          {'error': True, 'msg': 'This identifier has expired',
                           'result': None})
 
+    @mock.patch('simple_auth.core.client.requests')
+    @mock.patch('simple_auth.core.server.time')
+    @mock.patch('simple_auth.core.server.uuid')
+    def test_multi_client(self, mock_uuid, mock_time, mock_requests):
+        server = SimpleAuthServer()
+        client1 = SimpleAuthClient(url_server_auth='http://localhost')
+        client2 = SimpleAuthClient(url_server_auth='http://localhost')
+
+        mock_requests.post = render_requests_redirect(server)
+        mock_uuid.uuid4 = mock.MagicMock(
+            side_effect=['mock_uud4_%s' % i for i in range(1000)])
+
+        # mocks
+        mock_time.time = lambda: 100
+
+        # get identifiers from server
+        identifier1 = client1.get_identifier()['result']['identifier']
+        self.assertEqual('mock_uud4_0', identifier1, "Wrong identifier")
+
+        identifier2 = client2.get_identifier()['result']['identifier']
+        self.assertEqual('mock_uud4_2', identifier2, "Wrong identifier")
+
+        expected_session_storage = {
+            'mock_uud4_0': {
+                'timestamp': 100,
+                'timestamp_expired': 145,
+                'main_token': 'mock_uud4_1',
+                'action': 'identifier'},
+
+            'mock_uud4_2': {
+                'timestamp': 100,
+                'timestamp_expired': 145,
+                'main_token': 'mock_uud4_3',
+                'action': 'identifier'}}
+
+        self.assertEqual(
+            expected_session_storage,
+            server.session_storage,
+            "Session storage has got wrong data"
+        )
+
+        # authenticate the user on the server
+        # set up user to identifier1
+        server.add_user_data(identifier1, 1)
+        expected_session_storage[identifier1]['user'] = {
+            'id': 1, 'name': 'User name', 'level': 5, 'access': [1, 2, 3]}
+
+        self.assertEqual(
+            expected_session_storage,
+            server.session_storage,
+            "Session storage has got wrong data"
+        )
+
+        response = server.get_token(identifier1)['result']
+
+        expected_response = {'timestamp': 100, 'timestamp_expired': 130,
+                             'user': {'id': 1, 'name': 'User name', 'level': 5,
+                                      'access': [1, 2, 3]},
+                             'token': {'access_token': 'mock_uud4_4',
+                                       'update_token': 'mock_uud4_5',
+                                       'expired_access_token': 130,
+                                       'expired_update_token': 160}}
+
+        self.assertEqual(
+            expected_response,
+            response,
+            "The request server.get_token has returned a wrong response"
+        )
+
+        key1 = 'mock_uud4_1'
+        # authenticate the user on the server
+        # set up user to identifier1
+        response = server.merge_main_tokens(
+            key1=key1,
+            key2=identifier2
+        )
+
+        self.assertEqual(
+            {'error': False, 'msg': '', 'result': None},
+            response,
+            "The request server.get_token has returned a wrong response"
+        )
+
+        expected_session_storage = {
+            'mock_uud4_2': {'timestamp': 100, 'timestamp_expired': 145,
+                            'main_token': 'mock_uud4_1',
+                            'action': 'identifier'},
+            'mock_uud4_4': {'timestamp': 100, 'timestamp_expired': 130,
+                            'main_token': 'mock_uud4_1',
+                            'action': 'access',
+                            'user': {'id': 1, 'name': 'User name',
+                                     'level': 5, 'access': [1, 2, 3]},
+                            'token': {'access_token': 'mock_uud4_4',
+                                      'update_token': 'mock_uud4_5',
+                                      'expired_access_token': 130,
+                                      'expired_update_token': 160}},
+            'mock_uud4_5': {'timestamp': 100, 'timestamp_expired': 160,
+                            'main_token': 'mock_uud4_1',
+                            'action': 'update',
+                            'user': {'id': 1, 'name': 'User name',
+                                     'level': 5, 'access': [1, 2, 3]},
+                            'token': {'access_token': 'mock_uud4_4',
+                                      'update_token': 'mock_uud4_5',
+                                      'expired_access_token': 130,
+                                      'expired_update_token': 160}},
+            'mock_uud4_1': {'timestamp': 100,
+                            'main_token': 'mock_uud4_1',
+                            'timestamp_expired': 160, 'action': 'main'}}
+
+        self.assertEqual(
+            expected_session_storage,
+            server.session_storage,
+            "Session storage has got wrong data"
+        )
+
+        return
+
+
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(MyTestCase)
