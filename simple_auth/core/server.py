@@ -221,6 +221,32 @@ class SimpleAuthServer(BaseMixin):
 
         return response
 
+    def __update_main_token(self, key: str, main_token: str):
+        data = self.session_storage[key]
+        data['main_token'] = main_token
+        self.session_storage[key] = data
+        return
+
+    def merge_main_tokens(self, key1: str, key2: str) -> None:
+
+        response = self.check_key(key1)
+        if response.get('error', True):
+            response['msg'] = response.get('msg', '').replace(
+                'The key', 'The key1')
+            return response
+
+        response = self.check_key(key2)
+        if response.get('error', True):
+            response['msg'] = response.get('msg', '').replace(
+                'The key', 'The key2')
+            return response
+
+        main_token = self.session_storage[key1]['main_token']
+        self.__update_main_token(key2, main_token)
+
+        return self.format()
+
+
 
 
 
