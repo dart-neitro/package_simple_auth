@@ -162,6 +162,28 @@ class SimpleAuthServer(BaseMixin):
         # TODO add method
         return self.format()
 
+    def check_key(self, key: str):
+        """
+        Check key
+
+        :param key: string
+
+        :return:
+        """
+
+        if key not in self.session_storage:
+            return self.format(error=True, msg="The key is wrong")
+
+        current_time = int(time.time())
+        timestamp_default = current_time - 1
+        timestamp_expired = self.session_storage[key].get(
+            'timestamp_expired', timestamp_default)
+        if timestamp_expired - current_time < self.time_delta:
+            return self.format(
+                error=True, msg="This key has expired")
+
+        return self.format(result=dict(key=key))
+
     def check_identifier(self, identifier: str):
         """
         Check identifier
@@ -170,17 +192,18 @@ class SimpleAuthServer(BaseMixin):
 
         :return:
         """
+        response = self.check_key(key=identifier)
+        if response.get('error', True):
+            response['msg'] = response.get('msg', '').replace(
+                'The key', 'The identifier')
+            return response
 
-        if identifier not in self.session_storage:
+        expected_action = 'identifier'
+        action = self.session_storage[identifier].get(
+            'action', '')
+
+        if expected_action != action:
             return self.format(error=True, msg="The identifier is wrong")
-
-        current_time = int(time.time())
-        timestamp_default = current_time - 1
-        timestamp_expired = self.session_storage[identifier].get(
-            'timestamp_expired', timestamp_default)
-        if timestamp_expired - current_time < self.time_delta:
-            return self.format(
-                error=True, msg="This identifier has expired")
 
         return self.format(result=dict(identifier=identifier))
 
