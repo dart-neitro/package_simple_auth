@@ -7,3 +7,5 @@
 * Add type key - ?
 * Add decorator for flask?
 * Add timeout for request to server auth
+* Add check on to exist the main_token
+* Check change session storage
